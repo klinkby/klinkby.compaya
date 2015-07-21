@@ -6,6 +6,8 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
 
 namespace Klinkby.Compaya
@@ -99,11 +101,27 @@ namespace Klinkby.Compaya
         /// <exception cref="CompayaSmsException">Thrown if SMS couldn't be sent</exception>
         public void Send()
         {
+            var t = SendAsync(CancellationToken.None);
+            if (t.Status == TaskStatus.Created)
+            {
+                t.RunSynchronously();
+            }
+            else
+            {
+                t.Wait();
+            }
+        }
+
+        /// <summary>Sends the sms non-blocking using I/O completion port</summary>
+        /// <param name="cancellationToken">Stop the background process</param> 
+        /// <exception cref="System.Web.HttpException">Thrown if http server didn't accept the request</exception>
+        /// <exception cref="CompayaSmsException">Thrown if SMS couldn't be sent</exception>
+        public async Task SendAsync(CancellationToken cancellationToken)
+        {
             var reqUri = new Uri(ServiceUrl + "?" + ToString());
-            string contents = GetHttpContents(reqUri);
+            string contents = await GetHttpContentsAsync(reqUri, cancellationToken);
             Group errorGroup = Regex.Match(contents).Groups["error"];
-            if (errorGroup.Success)
-                throw new CompayaSmsException(errorGroup.Value);
+            if (errorGroup.Success) throw new CompayaSmsException(errorGroup.Value);
         }
 
         private static string UrlEncode(string text)
@@ -122,16 +140,17 @@ namespace Klinkby.Compaya
             return sb.ToString();
         }
 
-        private static string GetHttpContents(Uri reqUri)
+        private static async Task<string> GetHttpContentsAsync(Uri reqUri, CancellationToken cancellationToken)
         {
             string contents;
             var req = (HttpWebRequest) WebRequest.Create(reqUri);
             req.Method = "GET";
-            using (var res = (HttpWebResponse) req.GetResponse())
+            using (var res = (HttpWebResponse) await GetResponseAsync(req, cancellationToken))
             {
-                if (res.StatusCode == HttpStatusCode.OK)
+                if (res.StatusCode >= HttpStatusCode.BadRequest)
                 {
                     var s = res.GetResponseStream();
+                    if (0 == res.ContentLength) return "";
                     Debug.Assert(s != null, "s != null");
                     using (var sr = new StreamReader(s))
                     {
@@ -142,6 +161,27 @@ namespace Klinkby.Compaya
                     throw new HttpException((int) res.StatusCode, res.StatusDescription);
             }
             return contents;
+        }
+
+        private static async Task<WebResponse> GetResponseAsync(WebRequest request, CancellationToken ct)
+        {
+            using (ct.Register(request.Abort, false))
+            {
+                try
+                {
+                    var response = await request.GetResponseAsync();
+                    ct.ThrowIfCancellationRequested();
+                    return (HttpWebResponse)response;
+                }
+                catch (WebException ex)
+                {
+                    if (ct.IsCancellationRequested)
+                    {
+                        throw new OperationCanceledException(ex.Message, ex, ct);
+                    }
+                    throw;
+                }
+            }
         }
     }
 }
