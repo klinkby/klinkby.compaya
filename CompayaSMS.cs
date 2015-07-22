@@ -147,7 +147,7 @@ namespace Klinkby.Compaya
             req.Method = "GET";
             using (var res = (HttpWebResponse) await GetResponseAsync(req, cancellationToken))
             {
-                if (res.StatusCode >= HttpStatusCode.BadRequest)
+                if (res.StatusCode < HttpStatusCode.BadRequest)
                 {
                     var s = res.GetResponseStream();
                     if (0 == res.ContentLength) return "";
