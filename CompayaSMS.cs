@@ -32,7 +32,7 @@ namespace Klinkby.Compaya
         public CompayaSms(
             string username,
             string password,
-            int recipient,
+            long recipient,
             string message)
         {
             Username = username;
@@ -54,7 +54,7 @@ namespace Klinkby.Compaya
 
         /// <summary>Specifies the recipient of the SMS. Multiple Recipients can be provided by submitting multiple recipient fields named "recipient[]". Each recipient number has to be 8 chars, all numeric. When sending the SMS, the server will prepend 0045 to all numbers.</summary>
         /// <remarks>Required</remarks>
-        public int Recipient { get; private set; }
+        public long Recipient { get; private set; }
 
         /// <summary>Max len 459. Specifies the message to be sent. All chars allowed by the SMS protocol are accepted. If the message contains any illegal chars, they are automatically removed, and the message shortened. Multiple spaces are trimmed to only a single space. The maximum message length is 459 characters, which is the length of 3 sms'es joined together.</summary>
         public string Message { get; private set; }
