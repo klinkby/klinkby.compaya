@@ -1,28 +1,28 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿namespace Klinkby.Compaya;
 
-namespace Klinkby.Compaya
+/// <summary>
+///     Failure to send SMS
+/// </summary>
+public class CompayaSmsException : Exception
 {
-    [Serializable]
-    public class CompayaSmsException : Exception
+    /// <summary>
+    ///     Failure to send SMS
+    /// </summary>
+    public CompayaSmsException()
     {
-        public CompayaSmsException()
-        {
-        }
+    }
 
-        public CompayaSmsException(string message)
-            : base(message)
-        {
-        }
+    /// <summary>
+    ///     Failure to send SMS
+    /// </summary>
+    public CompayaSmsException(string message) : base(message)
+    {
+    }
 
-        protected CompayaSmsException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-
-        public CompayaSmsException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
+    /// <summary>
+    ///     Failure to send SMS
+    /// </summary>
+    public CompayaSmsException(string message, Exception innerException) : base(message, innerException)
+    {
     }
 }
